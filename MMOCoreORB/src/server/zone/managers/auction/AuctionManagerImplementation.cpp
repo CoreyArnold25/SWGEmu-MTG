@@ -35,6 +35,7 @@
 #include "AuctionSearchTask.h"
 #include "server/zone/objects/factorycrate/FactoryCrate.h"
 
+
 void AuctionManagerImplementation::initialize() {
 	Locker locker(_this.getReferenceUnsafeStaticCast());
 
@@ -80,6 +81,38 @@ void AuctionManagerImplementation::initialize() {
 			continue;
 		}
 
+		String vendorPlanetName = "";
+		float xcoord = 0;
+		float ycoord = 0;
+
+		ManagedReference<SceneObject*> vendor2 = zoneServer->getObject(auctionItem->getVendorID());
+
+		if (vendor2 != nullptr){
+			vendorPlanetName = vendor2->getZone()->getZoneName();
+			xcoord = vendor2->getPositionX();
+			ycoord = vendor2->getPositionY();
+		}
+
+		StringBuffer bazaar_statement;
+		bazaar_statement << "INSERT INTO bazaar_market (objectId, ownerid, ownername, amount, objectName, sold, deleted, onbazaar, planet, xcoordinate, ycoordinate)";
+		bazaar_statement << " SELECT * FROM (SELECT " << objectID;
+		bazaar_statement << " as objectId, " << auctionItem->getOwnerID() << " as ownerid, '" << auctionItem->getOwnerName();
+		bazaar_statement << "' as ownername, " << auctionItem->getPrice() << " as amount, '" << auctionItem->getItemName();
+		bazaar_statement << "' as objectName, 0 as sold, 0 as deleted, ";
+		bazaar_statement << (auctionItem->isOnBazaar() ? "1" : "0") << " as onbazaar,'" << vendorPlanetName << "' as planet, ";
+		if(xcoord != 0)
+			bazaar_statement << xcoord << " as xcoordinate, ";
+		else
+			bazaar_statement << "NULL as xcoordinate, ";
+		if(ycoord != 0)
+			bazaar_statement << ycoord << " as ycoordinate ";
+		else
+			bazaar_statement << "NULL as ycoordinate ";
+		bazaar_statement << ") as tmp";
+		bazaar_statement << " WHERE NOT EXISTS (SELECT objectId FROM bazaar_market WHERE objectId = " << objectID << " AND deleted = 0 and sold = 0) LIMIT 1; ";
+
+		ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
+
 		Locker lock(auctionItem);
 
 		if (progressTime.miliDifference() > 5000) {
@@ -87,8 +120,10 @@ void AuctionManagerImplementation::initialize() {
 			info(true) << "Scanned " << countDatabaseItems << " auctionitems db object(s) and loaded " << auctionMap->getTotalItemCount() << " object(s).";
 		}
 
-		if (auctionItem->getStatus() == AuctionItem::RETRIEVED
-		|| (auctionItem->getStatus() == AuctionItem::EXPIRED && auctionItem->getExpireTime() <= time(0))) {
+	    int status = auctionItem->getStatus();
+
+		if (status == AuctionItem::RETRIEVED
+		|| (status == AuctionItem::EXPIRED && auctionItem->getExpireTime() <= time(0))) {
 			itemsToDelete.add(auctionItem);
 			continue;
 		}
@@ -190,6 +225,11 @@ void AuctionManagerImplementation::initialize() {
 
 	for(int i = 0; i < itemsToDelete.size(); ++i) {
 		auto auctionItem = itemsToDelete.get(i);
+
+		StringBuffer bazaar_statement;
+		bazaar_statement << "UPDATE bazaar_market SET deleted = 1 WHERE objectid = " << auctionItem->getObjectID();
+
+		ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
 
 		if (auctionItem == nullptr) {
 			continue;
@@ -383,6 +423,12 @@ void AuctionManagerImplementation::doAuctionMaint(TerminalListVector* items, con
 				error() << "Auction Item failed validation: " << errMsg.toString() << "deleting auctionItem: " << *item;
 
 				uint64 sellingId = item->getAuctionedItemObjectID();
+
+				StringBuffer bazaar_statement;
+				bazaar_statement << "UPDATE bazaar_market SET deleted = 1 WHERE objectid = " << item->getObjectID();
+
+				ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
+
 				auctionMap->deleteItem(vendor, item, true);
 				continue;
 			}
@@ -424,6 +470,11 @@ void AuctionManagerImplementation::doAuctionMaint(TerminalListVector* items, con
 
 			if (item->getStatus() == AuctionItem::RETRIEVED) {
 				error() << "Found RETRIEVED item in maintenance, auctionItem: " << *item;
+				StringBuffer bazaar_statement;
+				bazaar_statement << "UPDATE bazaar_market SET deleted = 1 WHERE objectid = " << item->getObjectID();
+
+				ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
+
 				auctionMap->deleteItem(vendor, item);
 				continue;
 			}
@@ -1232,6 +1283,11 @@ void AuctionManagerImplementation::buyItem(CreatureObject* player, uint64 object
 
 	if (!item->isAuction()) { // Instant buy
 		doInstantBuy(player, item);
+
+		StringBuffer bazaar_statement;
+		bazaar_statement << "UPDATE bazaar_market SET sold = 1 WHERE objectid = " << item->getObjectID();
+
+		ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
 	} else { // For Auction Bids
 		if (price1 < 1) {
 			BaseMessage* msg = new BidAuctionResponseMessage(objectid, BidAuctionResponseMessage::INVALIDPRICE);
@@ -1884,6 +1940,11 @@ void AuctionManagerImplementation::cancelItem(CreatureObject* player, uint64 obj
 		if(vendor != nullptr && auctionMap->getVendorItemCount(vendor, true) == 0)
 			sendVendorUpdateMail(vendor, true);
 	}
+
+	StringBuffer bazaar_statement;
+	bazaar_statement << "UPDATE bazaar_market SET deleted = 1 WHERE objectid = " << objectID;
+
+	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
 }
 
 void AuctionManagerImplementation::expireSale(AuctionItem* item) {
@@ -1929,6 +1990,11 @@ void AuctionManagerImplementation::expireSale(AuctionItem* item) {
 		if(vendor != nullptr && auctionMap->getVendorItemCount(vendor, true) == 0)
 			sendVendorUpdateMail(vendor, true);
 	}
+
+	StringBuffer bazaar_statement;
+	bazaar_statement << "UPDATE bazaar_market SET deleted = 1 WHERE objectid = " << item->getObjectID();
+
+	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
 }
 
 void AuctionManagerImplementation::expireBidAuction(AuctionItem* item) {
@@ -1963,6 +2029,11 @@ void AuctionManagerImplementation::expireBidAuction(AuctionItem* item) {
 	locker.release();
 
 	cman->sendMail(sender, sellerSubject, sellerBody, item->getOwnerName());
+
+	StringBuffer bazaar_statement;
+	bazaar_statement << "UPDATE bazaar_market SET deleted = 1 WHERE objectid = " << item->getObjectID();
+
+	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
 }
 
 void AuctionManagerImplementation::expireAuction(AuctionItem* item) {
@@ -2082,6 +2153,11 @@ void AuctionManagerImplementation::expireAuction(AuctionItem* item) {
 		cman->sendMail(sender, sellerSubject, blankBody, sellerName, &sellerBodyVector, &sellerWaypointVector);
 		cman->sendMail(sender, buyerSubject, blankBody, item->getBidderName(), &buyerBodyVector, &buyerWaypointVector);
 	}
+
+	StringBuffer bazaar_statement;
+	bazaar_statement << "UPDATE bazaar_market SET deleted = 1 WHERE objectid = " << item->getObjectID();
+
+	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
 }
 
 void AuctionManagerImplementation::deleteExpiredSale(AuctionItem* item, bool sendMail) {
@@ -2122,6 +2198,11 @@ void AuctionManagerImplementation::deleteExpiredSale(AuctionItem* item, bool sen
 	}
 
 	auctionMap->deleteItem(vendor, item, true);
+
+	StringBuffer bazaar_statement;
+	bazaar_statement << "UPDATE bazaar_market SET deleted = 1 WHERE objectid = " << item->getObjectID();
+
+	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
 }
 
 void AuctionManagerImplementation::displayInfo(CreatureObject* player) {

@@ -1945,7 +1945,7 @@ bool MissionManagerImplementation::isBountyValidForPlayer(CreatureObject* player
 	if (!bounty->isOnline())
 		return false;
 
-	if (bounty->numberOfActiveMissions() >= 5)
+	if (bounty->numberOfActiveMissions() >= 2)
 		return false;
 
 	uint64 targetId = bounty->getTargetPlayerID();

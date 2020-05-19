@@ -171,6 +171,7 @@ function JediTrials:unlockJediKnight(pPlayer)
 		setFactionVal = FACTIONREBEL
 
 		awardSkill(pPlayer, "jedi_light_side_journeyman");
+
 	elseif (councilType == self.COUNCIL_DARK) then
 		knightRobe = "object/tangible/wearables/robe/robe_jedi_dark_s01.iff"
 		unlockMusic = "sound/music_become_dark_jedi.snd"
@@ -181,6 +182,7 @@ function JediTrials:unlockJediKnight(pPlayer)
 		setFactionVal = FACTIONIMPERIAL
 
 		awardSkill(pPlayer, "jedi_dark_side_journeyman");
+		
 	else
 		printLuaError("Invalid council type in JediTrials:unlockJediKnight")
 		return

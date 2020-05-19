@@ -13,6 +13,7 @@
 #include "server/zone/objects/tangible/components/vendor/VendorDataComponent.h"
 #include "server/zone/managers/object/ObjectManager.h"
 #include "server/zone/packets/auction/ItemSoldMessage.h"
+#include "server/db/ServerDatabase.h"
 
 int AuctionsMapImplementation::addItem(CreatureObject* player, SceneObject* vendor, AuctionItem* item) {
 	if(vendor == nullptr || vendor->getZone() == nullptr)
@@ -66,6 +67,34 @@ int AuctionsMapImplementation::addVendorItem(CreatureObject* player, const Strin
 
 	allItems.put(item->getAuctionedItemObjectID(), item);
 
+	float xcoord = 0;
+	float ycoord = 0;
+
+	if (vendor != nullptr){
+		xcoord = vendor->getPositionX();
+		ycoord = vendor->getPositionY();
+	}
+
+	StringBuffer bazaar_statement;
+	bazaar_statement << "INSERT INTO bazaar_market (objectId, ownerid, ownername, amount, objectName, sold, deleted, onbazaar, planet, xcoordinate, ycoordinate)";
+	bazaar_statement << " SELECT * FROM (SELECT " << item->getObjectID();
+	bazaar_statement << " as objectId, " << item->getOwnerID() << " as ownerid, '" << item->getOwnerName();
+	bazaar_statement << "' as ownername, " << item->getPrice() << " as amount, '" << item->getItemName();
+	bazaar_statement << "' as objectName, 0 as sold, 0 as deleted, ";
+	bazaar_statement << (item->isOnBazaar() ? "1" : "0") << " as onbazaar,'" << planet << "' as planet, ";
+	if(xcoord != 0)
+			bazaar_statement << xcoord << " as xcoordinate, ";
+		else
+			bazaar_statement << "NULL as xcoordinate, ";
+		if(ycoord != 0)
+			bazaar_statement << ycoord << " as ycoordinate ";
+		else
+			bazaar_statement << "NULL as ycoordinate ";
+		bazaar_statement << ") as tmp";
+	bazaar_statement << " WHERE NOT EXISTS (SELECT objectId FROM bazaar_market WHERE objectId = " << item->getObjectID() << " AND deleted = 0 and sold = 0) LIMIT 1; ";
+
+	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
+
 	return ItemSoldMessage::SUCCESS;
 }
 
@@ -90,12 +119,47 @@ int AuctionsMapImplementation::addBazaarItem(CreatureObject* player, const Strin
 		return ItemSoldMessage::UNKNOWNERROR;
 
 	allItems.put(item->getAuctionedItemObjectID(), item);
+
+	float xcoord = 0;
+	float ycoord = 0;
+
+	if (vendor != nullptr){
+		xcoord = vendor->getPositionX();
+		ycoord = vendor->getPositionY();
+	}
+
+	StringBuffer bazaar_statement;
+	bazaar_statement << "INSERT INTO bazaar_market (objectId, ownerid, ownername, amount, objectName, sold, deleted, onbazaar, planet, xcoordinate, ycoordinate)";
+	bazaar_statement << " SELECT * FROM (SELECT " << item->getObjectID();
+	bazaar_statement << " as objectId, " << item->getOwnerID() << " as ownerid, '" << item->getOwnerName();
+	bazaar_statement << "' as ownername, " << item->getPrice() << " as amount, '" << item->getItemName();
+	bazaar_statement << "' as objectName, 0 as sold, 0 as deleted, ";
+	bazaar_statement << (item->isOnBazaar() ? "1" : "0") << " as onbazaar,'" << planet << "' as planet, ";
+	if(xcoord != 0)
+			bazaar_statement << xcoord << " as xcoordinate, ";
+		else
+			bazaar_statement << "NULL as xcoordinate, ";
+		if(ycoord != 0)
+			bazaar_statement << ycoord << " as ycoordinate ";
+		else
+			bazaar_statement << "NULL as ycoordinate ";
+		bazaar_statement << ") as tmp";
+	bazaar_statement << " WHERE NOT EXISTS (SELECT objectId FROM bazaar_market WHERE objectId = " << item->getObjectID() << " AND deleted = 0 and sold = 0) LIMIT 1; ";
+
+	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
+
 	return ItemSoldMessage::SUCCESS;
 }
 
 void AuctionsMapImplementation::deleteItem(SceneObject* vendor, AuctionItem* item, bool deleteAuctionedObject) {
 	Locker locker(_this.getReferenceUnsafeStaticCast());
 	removeItem(vendor, item);
+
+	StringBuffer bazaar_statement;
+	bazaar_statement << "UPDATE bazaar_market SET deleted = 1 WHERE objectid = " << item->getObjectID();
+
+	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
+
 	item->destroyAuctionItemFromDatabase(false, deleteAuctionedObject);
 }
 
@@ -108,6 +172,11 @@ void AuctionsMapImplementation::removeItem(SceneObject* vendor, AuctionItem* ite
 		else
 			removeVendorItem(vendor, item);
 	}
+
+	StringBuffer bazaar_statement;
+	bazaar_statement << "UPDATE bazaar_market SET deleted = 1 WHERE objectid = " << item->getObjectID();
+
+	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
 
 	allItems.drop(item->getAuctionedItemObjectID());
 }
@@ -122,8 +191,14 @@ void AuctionsMapImplementation::removeVendorItem(SceneObject* vendor, AuctionIte
 
 	//Locker vlocker(vendorItems);
 
-	if(vendorItems->drop(item))
+	StringBuffer bazaar_statement;
+	bazaar_statement << "UPDATE bazaar_market SET deleted = 1 WHERE objectid = " << item->getObjectID();
+
+	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
+
+	if(vendorItems->drop(item)){
 		return;
+	}
 
 	logger.error("unable to remove vendor item");
 }
@@ -135,6 +210,11 @@ void AuctionsMapImplementation::removeBazaarItem(SceneObject* vendor,  AuctionIt
 
 	if(bazaarItems == nullptr)
 		return;
+
+	StringBuffer bazaar_statement;
+	bazaar_statement << "UPDATE bazaar_market SET deleted = 1 WHERE objectid = " << item->getObjectID();
+
+	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
 
 	//Locker blocker(bazaarItems);
 
