@@ -105,43 +105,59 @@ void ShuttleBeaconImplementation::callShuttle(CreatureObject* player) {
 	player->sendMessage(listbox->generateMessage());
 }
 
-void ShuttleBeaconImplementation::spawnShuttle(CreatureObject* player, int type) {
+ManagedReference<CreatureObject*> ShuttleBeaconImplementation::spawnShuttle(CreatureObject* player, int type, ZoneServer* zneServer = nullptr, Zone* zone = nullptr) {
 	ManagedReference<CreatureObject*> strongShuttle = shuttle.get();
 
 	if (player == nullptr || (strongShuttle != nullptr && strongShuttle->getZone() != nullptr))
-		return;
+		return nullptr;
 
 	ManagedReference<ZoneServer*> zoneServer = getZoneServer();
 
+	if(zneServer != nullptr)
+		zoneServer = zneServer;
+
 	if (zoneServer == nullptr)
-		return;
+		return nullptr;
 
-	if (!canSpawnShuttle(player)) {
-		player->sendSystemMessage("@event_perk:shuttle_not_called"); // A shuttle could not be called.
-		return;
+	if(zneServer != nullptr){
+		if (!canSpawnShuttleSimple(player, zone)) {
+			player->sendSystemMessage("@event_perk:shuttle_not_called"); // A shuttle could not be called.
+			return nullptr;
+		}
+	}else{
+		if (!canSpawnShuttle(player, zone)) {
+			player->sendSystemMessage("@event_perk:shuttle_not_called"); // A shuttle could not be called.
+			return nullptr;
+		}
 	}
 
+	ManagedReference<SceneObject*> object = nullptr;
 	uint32 shuttleTemplate;
-
-	switch (type) {
-	case 3: shuttleTemplate = 0xB120E676; break; // object/creature/npc/theme_park/event_transport_theed_hangar.iff
-	case 2: shuttleTemplate = 0xD3D6FBA1; break; // object/creature/npc/theme_park/event_transport.iff
-	case 1: shuttleTemplate = 0x62A585E7; break; // object/creature/npc/theme_park/player_shuttle.iff
-	case 0: shuttleTemplate = 0xCB59CE5C; break; // object/creature/npc/theme_park/lambda_shuttle.iff
-	default: return;
+	if(zneServer == nullptr){
+		switch (type) {
+		case 3: shuttleTemplate = 0xB120E676; break; // object/creature/npc/theme_park/event_transport_theed_hangar.iff
+		case 2: shuttleTemplate = 0xD3D6FBA1; break; // object/creature/npc/theme_park/event_transport.iff
+		case 1: shuttleTemplate = 0x62A585E7; break; // object/creature/npc/theme_park/player_shuttle.iff
+		case 0: shuttleTemplate = 0xCB59CE5C; break; // object/creature/npc/theme_park/lambda_shuttle.iff
+		default: return nullptr;
 	}
 
-	shuttleType = type;
+		shuttleType = type;
+	}
+	else{
+		shuttleType = 1;
+		shuttleTemplate = STRING_HASHCODE("object/tangible/travel/shuttle/base/base_travel_shuttle.iff");
+	}
 
-	ManagedReference<SceneObject*> object = zoneServer->createObject(shuttleTemplate, 0);
+	object = zoneServer->createObject(shuttleTemplate, 0);
 
 	if (object == nullptr)
-		return;
+		return nullptr;
 
 	CreatureObject* newShuttle = cast<CreatureObject*>( object.get());
 
 	if (newShuttle == nullptr)
-		return;
+		return nullptr;
 
 	Locker locker(newShuttle);
 
@@ -165,13 +181,15 @@ void ShuttleBeaconImplementation::spawnShuttle(CreatureObject* player, int type)
 	ManagedReference<ShuttleBeacon*> tempBeacon = _this.getReferenceUnsafeStaticCast();
 
 	if (tempBeacon == nullptr)
-		return;
+		return nullptr;
 
 	Reference<CreatureObject*> creo = player;
 	Core::getTaskManager()->scheduleTask([tempBeacon, creo] {
 		Locker locker(tempBeacon);
 		tempBeacon->landShuttle(creo);
 	}, "LandShuttleTask", 250);
+
+	return strongShuttle;
 }
 
 void ShuttleBeaconImplementation::landShuttle(CreatureObject* player) {
@@ -259,8 +277,45 @@ void ShuttleBeaconImplementation::destroyShuttle(CreatureObject* player) {
 		player->sendSystemMessage("@event_perk:shuttle_next_is_ready"); // Shuttle Beacon: You may now call another shuttle.
 }
 
-bool ShuttleBeaconImplementation::canSpawnShuttle(CreatureObject* player) {
+bool ShuttleBeaconImplementation::canSpawnShuttleSimple(CreatureObject* player, Zone* zne = nullptr) {
 	Zone* zone = player->getZone();
+	if(zne != nullptr)
+		zone = zne;
+
+	if (zone == nullptr)
+		return false;
+
+	PlanetManager* planetManager = zone->getPlanetManager();
+
+	if (planetManager == nullptr)
+		return false;
+
+	if (zone->getZoneName().contains("space_"))
+		return false;
+
+	if (player->isInCombat())
+		return false;
+
+	if (player->isSwimming())
+		return false;
+
+	ManagedReference<CityRegion*> city = player->getCityRegion().get();
+
+	if (city != nullptr) {
+		if (city->isClientRegion())
+			return false;
+
+		if (city->isZoningEnabled() && !city->hasZoningRights(player->getObjectID()))
+			return false;
+	}
+
+	return true;
+}
+
+bool ShuttleBeaconImplementation::canSpawnShuttle(CreatureObject* player, Zone* zne = nullptr) {
+	Zone* zone = player->getZone();
+	if(zne != nullptr)
+		zone = zne;
 
 	if (zone == nullptr)
 		return false;

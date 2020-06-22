@@ -399,10 +399,6 @@ void InstallationObjectImplementation::updateHopper(Time& workingTime, bool shut
 	if((int)getHopperSize() >= (int)getHopperSizeMax())
 		shutdownAfterUpdate = true;
 
-	if(spawnExpireTimestamp.compareTo(currentTime) > 0) {
-		shutdownAfterUpdate = true;
-	}
-
 	if (shutdownAfterUpdate)
 		setOperating(false);
 

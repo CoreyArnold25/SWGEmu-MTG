@@ -37,7 +37,7 @@ public:
 		if (index == -1)
 			return;
 
-		shuttleBeacon->spawnShuttle(player, index);
+		shuttleBeacon->spawnShuttle(player, index, nullptr, nullptr);
 	}
 };
 

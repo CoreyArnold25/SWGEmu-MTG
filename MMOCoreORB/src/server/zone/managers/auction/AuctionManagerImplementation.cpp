@@ -94,7 +94,10 @@ void AuctionManagerImplementation::initialize() {
 		}
 
 		StringBuffer bazaar_statement;
-		bazaar_statement << "INSERT INTO bazaar_market (objectId, ownerid, ownername, amount, objectName, sold, deleted, onbazaar, planet, xcoordinate, ycoordinate)";
+
+		String objectType = GetObjectTypeName(auctionItem->getItemType());
+		
+		bazaar_statement << "INSERT INTO bazaar_market (objectId, ownerid, ownername, amount, objectName, sold, deleted, onbazaar, planet, xcoordinate, ycoordinate, objecttype)";
 		bazaar_statement << " SELECT * FROM (SELECT " << objectID;
 		bazaar_statement << " as objectId, " << auctionItem->getOwnerID() << " as ownerid, '" << auctionItem->getOwnerName();
 		bazaar_statement << "' as ownername, " << auctionItem->getPrice() << " as amount, '" << auctionItem->getItemName();
@@ -105,13 +108,22 @@ void AuctionManagerImplementation::initialize() {
 		else
 			bazaar_statement << "NULL as xcoordinate, ";
 		if(ycoord != 0)
-			bazaar_statement << ycoord << " as ycoordinate ";
+			bazaar_statement << ycoord << " as ycoordinate, ";
 		else
-			bazaar_statement << "NULL as ycoordinate ";
+			bazaar_statement << "NULL as ycoordinate, ";
+		bazaar_statement << "'" << objectType << "' as objecttype ";
+
 		bazaar_statement << ") as tmp";
 		bazaar_statement << " WHERE NOT EXISTS (SELECT objectId FROM bazaar_market WHERE objectId = " << objectID << " AND deleted = 0 and sold = 0) LIMIT 1; ";
 
 		ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
+
+        Reference<SceneObject*> object = zoneServer->getObject(auctionItem->getAuctionedItemObjectID());
+
+		StringBuffer bazaar_statement2;
+		bazaar_statement2 << "UPDATE bazaar_market SET attributes = '" <<  object->toStringData() << "' WHERE objectid = " << objectID;
+
+		ServerDatabase::instance()->executeQuery(bazaar_statement2.toString());
 
 		Locker lock(auctionItem);
 
@@ -317,6 +329,497 @@ void AuctionManagerImplementation::initialize() {
 		<< "in " << elapsed << " second(s), (" << ps << "/s), "
 		<< "skipped " << skipped << " (" << countDuplicates << " duplicate listings), "
 		<< "loaded " << auctionMap->getTotalItemCount() << " object(s) into auctionsMap.";
+}
+
+String AuctionManagerImplementation::GetObjectTypeName(int itemTypeId){
+	String objectTypeName = "";
+	switch(itemTypeId){
+		case SceneObjectType::WEAPON:
+			objectTypeName = "WEAPON";
+			break;
+		case SceneObjectType::MELEEWEAPON:
+			objectTypeName = "MELEEWEAPON";
+			break;
+		case SceneObjectType::PISTOL:
+			objectTypeName = "PISTOL";
+			break;
+		case SceneObjectType::RANGEDWEAPON:
+			objectTypeName = "RANGEDWEAPON";
+			break;
+		case SceneObjectType::ONEHANDMELEEWEAPON:
+			objectTypeName = "ONEHANDMELEEWEAPON";
+			break;
+		case SceneObjectType::SPECIALHEAVYWEAPON:
+			objectTypeName = "SPECIALHEAVYWEAPON";
+			break;
+		case SceneObjectType::HEAVYWEAPON:
+			objectTypeName = "HEAVYWEAPON";
+			break;
+		case SceneObjectType::RIFLE:
+			objectTypeName = "RIFLE";
+			break;
+		case SceneObjectType::CARBINE:
+			objectTypeName = "CARBINE";
+			break;
+		case SceneObjectType::POLEARM:
+			objectTypeName = "POLEARM";
+			break;
+		case SceneObjectType::TWOHANDMELEEWEAPON:
+			objectTypeName = "TWOHANDMELEEWEAPON";
+			break;
+		case SceneObjectType::MINE:
+			objectTypeName = "MINE";
+			break;
+		case SceneObjectType::THROWNWEAPON:
+			objectTypeName = "THROWNWEAPON";
+			break;
+		case SceneObjectType::ARMOR:
+			objectTypeName = "ARMOR";
+			break;
+		case SceneObjectType::BODYARMOR:
+			objectTypeName = "BODYARMOR";
+			break;
+		case SceneObjectType::HEADARMOR:
+			objectTypeName = "HEADARMOR";
+			break;
+		case SceneObjectType::MISCARMOR:
+			objectTypeName = "MISCARMOR";
+			break;
+		case SceneObjectType::LEGARMOR:
+			objectTypeName = "LEGARMOR";
+			break;
+		case SceneObjectType::ARMARMOR:
+			objectTypeName = "ARMARMOR";
+			break;
+		case SceneObjectType::FOOTARMOR:
+			objectTypeName = "FOOTARMOR";
+			break;
+		case SceneObjectType::SHIELDGENERATOR:
+			objectTypeName = "SHIELDGENERATOR";
+			break;
+		case SceneObjectType::TOOL:
+			objectTypeName = "TOOL";
+			break;
+		case SceneObjectType::CRAFTINGTOOL:
+			objectTypeName = "CRAFTINGTOOL";
+			break;
+		case SceneObjectType::SURVEYTOOL:
+			objectTypeName = "SURVEYTOOL";
+			break;
+		case SceneObjectType::RECYCLETOOL:
+			objectTypeName = "RECYCLETOOL";
+			break;
+		case SceneObjectType::CRAFTINGSTATION:
+			objectTypeName = "CRAFTINGSTATION";
+			break;
+		case SceneObjectType::FURNITURE:
+			objectTypeName = "FURNITURE";
+			break;
+		case SceneObjectType::FOOD:
+			objectTypeName = "FOOD";
+			break;
+		case SceneObjectType::DRINK:
+			objectTypeName = "DRINK";
+			break;
+		case SceneObjectType::CONTAINER:
+			objectTypeName = "CONTAINER";
+			break;
+		case SceneObjectType::INSTALLATION:
+			objectTypeName = "INSTALLATION";
+			break;
+		case SceneObjectType::FACTORY:
+			objectTypeName = "FACTORY";
+			break;
+		case SceneObjectType::GENERATOR:
+			objectTypeName = "GENERATOR";
+			break;
+		case SceneObjectType::HARVESTER:
+			objectTypeName = "HARVESTER";
+			break;
+		case SceneObjectType::DESTRUCTIBLE:
+			objectTypeName = "DESTRUCTIBLE";
+			break;
+		case SceneObjectType::MINEFIELD:
+			objectTypeName = "MINEFIELD";
+			break;
+		case SceneObjectType::GARAGEINSTALLATION:
+			objectTypeName = "GARAGEINSTALLATION";
+			break;
+		case SceneObjectType::SHUTTLEINSTALLATION:
+			objectTypeName = "SHUTTLEINSTALLATION";
+			break;
+		case SceneObjectType::AMMUNITION:
+			objectTypeName = "AMMUNITION";
+			break; 
+		case SceneObjectType::CHEMICAL:
+			objectTypeName = "CHEMICAL";
+			break; 
+		case SceneObjectType::WEARABLECONTAINER:
+			objectTypeName = "WEARABLECONTAINER";
+			break; 
+		case SceneObjectType::ELECTRONICS:
+			objectTypeName = "ELECTRONICS";
+			break; 
+		case SceneObjectType::FLORA:
+			objectTypeName = "FLORA";
+			break; 
+		case SceneObjectType::INSTRUMENT:
+			objectTypeName = "INSTRUMENT";
+			break; 
+		case SceneObjectType::PHARMACEUTICAL:
+			objectTypeName = "PHARMACEUTICAL";
+			break; 
+		case SceneObjectType::SIGN:
+			objectTypeName = "SIGN";
+			break; 
+		case SceneObjectType::FACTORYCRATE:
+			objectTypeName = "FACTORYCRATE";
+			break;
+		case SceneObjectType::TRAVELTICKET:
+			objectTypeName = "TRAVELTICKET";
+			break; 
+		case SceneObjectType::GENERICITEM:
+			objectTypeName = "GENERICITEM";
+			break; 
+		case SceneObjectType::TRAP:
+			objectTypeName = "TRAP";
+			break; 
+		case SceneObjectType::FISHINGPOLE:
+			objectTypeName = "FISHINGPOLE";
+			break; 
+		case SceneObjectType::FISHINGBAIT:
+			objectTypeName = "FISHINGBAIT";
+			break; 
+		case SceneObjectType::FIREWORK:
+			objectTypeName = "FIREWORK";
+			break;
+		case SceneObjectType::ITEM:
+			objectTypeName = "ITEM";
+			break; 
+		case SceneObjectType::PETMEDECINE:
+			objectTypeName = "PETMEDECINE";
+			break; 
+		case SceneObjectType::FIREWORKSHOW:
+			objectTypeName = "FIREWORKSHOW";
+			break; 
+		case SceneObjectType::CLOTHINGATTACHMENT:
+			objectTypeName = "CLOTHINGATTACHMENT";
+			break; 
+		case SceneObjectType::LIVESAMPLE:
+			objectTypeName = "LIVESAMPLE";
+			break; 
+		case SceneObjectType::ARMORATTACHMENT:
+			objectTypeName = "ARMORATTACHMENT";
+			break; 
+		case SceneObjectType::COMMUNITYCRAFTINGPROJECT:
+			objectTypeName = "COMMUNITYCRAFTINGPROJECT";
+			break; 
+		case SceneObjectType::CRYSTAL:
+			objectTypeName = "CRYSTAL";
+			break;
+		case SceneObjectType::DROIDPROGRAMMINGCHIP:
+			objectTypeName = "DROIDPROGRAMMINGCHIP";
+			break; 
+		case SceneObjectType::ASTEROID:
+			objectTypeName = "ASTEROID";
+			break; 
+		case SceneObjectType::PILOTCHAIR:
+			objectTypeName = "PILOTCHAIR";
+			break; 
+		case SceneObjectType::OPERATIONSCHAIR:
+			objectTypeName = "OPERATIONSCHAIR";
+			break; 
+		case SceneObjectType::TURRETACCESSLADDER:
+			objectTypeName = "TURRETACCESSLADDER";
+			break; 
+		case SceneObjectType::CONTAINER2:
+			objectTypeName = "CONTAINER2";
+			break; 
+		case SceneObjectType::CAMOKIT:
+			objectTypeName = "CAMOKIT";
+			break; 
+		case SceneObjectType::FISH:
+			objectTypeName = "FISH";
+			break;
+		case SceneObjectType::STIMPACK:
+			objectTypeName = "STIMPACK";
+			break; 
+		case SceneObjectType::RANGEDSTIMPACK:
+			objectTypeName = "RANGEDSTIMPACK";
+			break; 
+		case SceneObjectType::ENHANCEPACK:
+			objectTypeName = "ENHANCEPACK";
+			break; 
+		case SceneObjectType::CUREPACK:
+			objectTypeName = "CUREPACK";
+			break; 
+		case SceneObjectType::DOTPACK:
+			objectTypeName = "DOTPACK";
+			break; 
+		case SceneObjectType::WOUNDPACK:
+			objectTypeName = "WOUNDPACK";
+			break; 
+		case SceneObjectType::STATEPACK:
+			objectTypeName = "STATEPACK";
+			break; 
+		case SceneObjectType::REVIVEPACK:
+			objectTypeName = "REVIVEPACK";
+			break; 
+		case SceneObjectType::SLICINGTOOL:
+			objectTypeName = "SLICINGTOOL";
+			break; 
+		case SceneObjectType::MOLECULARCLAMP:
+			objectTypeName = "MOLECULARCLAMP";
+			break; 
+		case SceneObjectType::FLOWANALYZER:
+			objectTypeName = "FLOWANALYZER";
+			break; 
+		case SceneObjectType::LASERKNIFE:
+			objectTypeName = "LASERKNIFE";
+			break; 
+		case SceneObjectType::WEAPONUPGRADEKIT:
+			objectTypeName = "WEAPONUPGRADEKIT";
+			break; 
+		case SceneObjectType::ARMORUPGRADEKIT:
+			objectTypeName = "ARMORUPGRADEKIT";
+			break; 
+		case SceneObjectType::ANTIDECAYKIT:
+			objectTypeName = "ANTIDECAYKIT";
+			break; 
+		case SceneObjectType::VEHICLE:
+			objectTypeName = "VEHICLE";
+			break; 
+		case SceneObjectType::HOVERVEHICLE:
+			objectTypeName = "HOVERVEHICLE";
+			break; 
+		case SceneObjectType::COMPONENT:
+			objectTypeName = "COMPONENT";
+			break;
+		case SceneObjectType::ARMORCOMPONENT:
+			objectTypeName = "ARMORCOMPONENT";
+			break;
+		case SceneObjectType::CHEMISTRYCOMPONENT:
+			objectTypeName = "CHEMISTRYCOMPONENT";
+			break;
+		case SceneObjectType::CLOTHINGCOMPONENT:
+			objectTypeName = "CLOTHINGCOMPONENT";
+			break;
+		case SceneObjectType::DROIDCOMPONENT :
+			objectTypeName = "DROIDCOMPONENT";
+			break;
+		case SceneObjectType::ELECTRONICSCOMPONENT:
+			objectTypeName = "ELECTRONICSCOMPONENT";
+			break;
+		case SceneObjectType::MUNITIONCOMPONENT:
+			objectTypeName = "MUNITIONCOMPONENT";
+			break;
+		case SceneObjectType::STRUCTURECOMPONENT:
+			objectTypeName = "STRUCTURECOMPONENT";
+			break;
+		case SceneObjectType::MELEEWEAPONCOMPONENT:
+			objectTypeName = "MELEEWEAPONCOMPONENT";
+			break;
+		case SceneObjectType::RANGEDWEAPONCOMPONENT:
+			objectTypeName = "RANGEDWEAPONCOMPONENT";
+			break;
+		case SceneObjectType::TISSUECOMPONENT:
+			objectTypeName = "TISSUECOMPONENT";
+			break;
+		case SceneObjectType::GENETICCOMPONENT:
+			objectTypeName = "GENETICCOMPONENT";
+			break;
+		case SceneObjectType::LIGHTSABERCRYSTAL:
+			objectTypeName = "LIGHTSABERCRYSTAL";
+			break;
+		case SceneObjectType::COMMUNITYCRAFTINGCOMPONENT:
+			objectTypeName = "COMMUNITYCRAFTINGCOMPONENT";
+			break;
+		case SceneObjectType::DNACOMPONENT:
+			objectTypeName = "DNACOMPONENT";
+			break;
+		case SceneObjectType::WEAPONPOWERUP:
+			objectTypeName = "WEAPONPOWERUP";
+			break;
+		case SceneObjectType::MELEEWEAPONPOWERUP:
+			objectTypeName = "MELEEWEAPONPOWERUP";
+			break;
+		case SceneObjectType::RANGEDWEAPONPOWERUP:
+			objectTypeName = "RANGEDWEAPONPOWERUP";
+			break;
+		case SceneObjectType::THROWNWEAPONPOWERUP:
+			objectTypeName = "THROWNWEAPONPOWERUP";
+			break;
+		case SceneObjectType::HEAVYWEAPONPOWERUP:
+			objectTypeName = "HEAVYWEAPONPOWERUP";
+			break;
+		case SceneObjectType::MINEPOWERUP:
+			objectTypeName = "MINEPOWERUP";
+			break;
+		case SceneObjectType::SPECIALHEAVYWEAPONPOWERUP:
+			objectTypeName = "SPECIALHEAVYWEAPONPOWERUP";
+			break;
+		case SceneObjectType::ARMORPOWERUP:
+			objectTypeName = "ARMORPOWERUP";
+			break;
+		case SceneObjectType::BODYARMORPOWERUP:
+			objectTypeName = "BODYARMORPOWERUP";
+			break;
+		case SceneObjectType::HEADARMORPOWERUP:
+			objectTypeName = "HEADARMORPOWERUP";
+			break;
+		case SceneObjectType::MISCARMORPOWERUP:
+			objectTypeName = "MISCARMORPOWERUP";
+			break;
+		case SceneObjectType::LEGARMORPOWERUP:
+			objectTypeName = "LEGARMORPOWERUP";
+			break;
+		case SceneObjectType::ARMARMORPOWERUP:
+			objectTypeName = "ARMARMORPOWERUP";
+			break;
+		case SceneObjectType::HANDARMORPOWERUP:
+			objectTypeName = "HANDARMORPOWERUP";
+			break;
+		case SceneObjectType::FOOTARMORPOWERUP:
+			objectTypeName = "FOOTARMORPOWERUP";
+			break;
+		case SceneObjectType::JEWELRY:
+			objectTypeName = "JEWELRY";
+			break;
+		case SceneObjectType::RING:
+			objectTypeName = "RING";
+			break;
+		case SceneObjectType::BRACELET:
+			objectTypeName = "BRACELET";
+			break;
+		case SceneObjectType::NECKLACE:
+			objectTypeName = "NECKLACE";
+			break;
+		case SceneObjectType::EARRING:
+			objectTypeName = "EARRING";
+			break;
+		case SceneObjectType::RESOURCECONTAINER:
+			objectTypeName = "RESOURCECONTAINER";
+			break;
+		case SceneObjectType::ENERGYGAS:
+			objectTypeName = "ENERGYGAS";
+			break;
+		case SceneObjectType::ENERGYLIQUID:
+			objectTypeName = "ENERGYLIQUID";
+			break;
+		case SceneObjectType::ENERGYRADIOACTIVE:
+			objectTypeName = "ENERGYRADIOACTIVE";
+			break;
+		case SceneObjectType::ENERGYSOLID:
+			objectTypeName = "ENERGYSOLID";
+			break; 
+		case SceneObjectType::INORGANICCHEMICAL:
+			objectTypeName = "INORGANICCHEMICAL";
+			break;
+		case SceneObjectType::INORGANICGAS:
+			objectTypeName = "INORGANICGAS";
+			break;
+		case SceneObjectType::INORGANICMINERAL:
+			objectTypeName = "INORGANICMINERAL";
+			break;
+		case SceneObjectType::WATER:
+			objectTypeName = "WATER";
+			break;
+		case SceneObjectType::ORGANICFOOD:
+			objectTypeName = "ORGANICFOOD";
+			break;
+		case SceneObjectType::ORGANICHIDE:
+			objectTypeName = "ORGANICHIDE";
+			break;
+		case SceneObjectType::ORGANICSTRUCTURAL:
+			objectTypeName = "ORGANICSTRUCTURAL";
+			break;
+		case SceneObjectType::QUESTRESOURCE:
+			objectTypeName = "QUESTRESOURCE";
+			break;
+		case SceneObjectType::DEED:
+			objectTypeName = "DEED";
+			break;
+		case SceneObjectType::BUILDINGDEED:
+			objectTypeName = "BUILDINGDEED";
+			break;
+		case SceneObjectType::INSTALLATIONDEED:
+			objectTypeName = "INSTALLATIONDEED";
+			break;
+		case SceneObjectType::PETDEED:
+			objectTypeName = "PETDEED";
+			break;
+		case SceneObjectType::DROIDDEED:
+			objectTypeName = "DROIDDEED";
+			break;
+		case SceneObjectType::VEHICLEDEED:
+			objectTypeName = "VEHICLEDEED";
+			break;
+		case SceneObjectType::RESOURCEDEED:
+			objectTypeName = "RESOURCEDEED";
+			break;
+		case SceneObjectType::CLOTHING:
+			objectTypeName = "CLOTHING";
+			break; 
+		case SceneObjectType::BANDOLIER:
+			objectTypeName = "BANDOLIER";
+			break;
+		case SceneObjectType::BELT:
+			objectTypeName = "BELT";
+			break;
+		case SceneObjectType::BODYSUIT:
+			objectTypeName = "BODYSUIT";
+			break;
+		case SceneObjectType::CAPE:
+			objectTypeName = "CAPE";
+			break;
+		case SceneObjectType::CLOAK:
+			objectTypeName = "CLOAK";
+			break;
+		case SceneObjectType::FOOTWEAR:
+			objectTypeName = "FOOTWEAR";
+			break;
+		case SceneObjectType::DRESS:
+			objectTypeName = "DRESS";
+			break;
+		case SceneObjectType::HANDWEAR:
+			objectTypeName = "HANDWEAR";
+			break;
+		case SceneObjectType::EYEWEAR:
+			objectTypeName = "EYEWEAR";
+			break;
+		case SceneObjectType::HEADWEAR:
+			objectTypeName = "HEADWEAR";
+			break;
+		case SceneObjectType::JACKET:
+			objectTypeName = "JACKET";
+			break;
+		case SceneObjectType::PANTS:
+			objectTypeName = "PANTS";
+			break;
+		case SceneObjectType::ROBE:
+			objectTypeName = "ROBE";
+			break;
+		case SceneObjectType::SHIRT:
+			objectTypeName = "SHIRT";
+			break;
+		case SceneObjectType::VEST:
+			objectTypeName = "VEST";
+			break; 
+		case SceneObjectType::WOOKIEGARB:
+			objectTypeName = "WOOKIEGARB";
+			break; 
+		case SceneObjectType::MISCCLOTHING:
+			objectTypeName = "MISCCLOTHING";
+			break;
+		case SceneObjectType::SKIRT:
+			objectTypeName = "SKIRT";
+			break;
+		default:
+			objectTypeName = "MISC";
+			break;
+	}
+
+	return objectTypeName;
 }
 
 void AuctionManagerImplementation::checkVendorItems(bool startupTask) {
@@ -727,8 +1230,13 @@ void AuctionManagerImplementation::addSaleItem(CreatureObject* player, uint64 ob
 				ManagedReference<CreatureObject*> strongOwnerRef = cast<CreatureObject*>(strongRef.get());
 
 				if(strongOwnerRef->isOnline()) {
+					
 					strongOwnerRef->sendSystemMessage(player->getFirstName() + " has offered an item to " + vendor->getDisplayedName());
 				}
+
+				String msg = player->getFirstName() + " has offered an item called " + item->getItemName() + " to " + vendor->getDisplayedName();
+
+				SendOfferedEmail(vendor, msg);
 			}
 		}
 	}
@@ -1824,6 +2332,26 @@ void AuctionManagerImplementation::getItemAttributes(CreatureObject* player, uin
 	player->sendMessage(msg);
 }
 
+String AuctionManagerImplementation::GetItemAttributes(uint64 objectid){
+	Reference<AuctionItem*> auctionItem = auctionMap->getItem(objectid);
+
+	if (auctionItem == nullptr)
+		return "None";
+
+	Reference<SceneObject*> object = zoneServer->getObject(auctionItem->getAuctionedItemObjectID());
+
+	if (object == nullptr) {
+		return "None";
+	}
+
+	UnicodeString description(auctionItem->getItemDescription());
+	AttributeListMessage* msg = new AttributeListMessage(objectid, description);
+
+	object->getAttributeListComponent()->fillAttributeList(msg, nullptr, object);
+
+	return msg->toString();
+}
+
 void AuctionManagerImplementation::cancelItem(CreatureObject* player, uint64 objectID) {
 
 	ManagedReference<AuctionItem*> item = auctionMap->getItem(objectID);
@@ -2275,6 +2803,30 @@ void AuctionManagerImplementation::sendVendorUpdateMail(SceneObject* vendor, boo
 		cman->sendMail(sender, subject, body, owner->getFirstName());
 	}
 
+}
+
+void AuctionManagerImplementation::SendOfferedEmail(SceneObject* vendor, String msg){
+	if (vendor == nullptr || !vendor->isVendor())
+		return;
+
+	VendorDataComponent* vendorData = nullptr;
+	DataObjectComponentReference* data = vendor->getDataObjectComponent();
+	if(data != nullptr && data->get() != nullptr && data->get()->isVendorData())
+		vendorData = cast<VendorDataComponent*>(data->get());
+
+	if(vendorData == nullptr)
+		return;
+
+	ManagedReference<ChatManager*> cman = vendor->getZoneServer()->getChatManager();
+	ManagedReference<CreatureObject*> owner = vendor->getZoneServer()->getObject(vendorData->getOwnerId()).castTo<CreatureObject*>();
+
+	String sender = vendor->getDisplayedName();
+	UnicodeString subject = "Item offered to Vendor";
+
+	if (cman == nullptr || owner == nullptr)
+		return;
+
+	cman->sendMail(sender, subject, msg, owner->getFirstName());
 }
 
 String AuctionManagerImplementation::removeColorCodes(const String& name) {

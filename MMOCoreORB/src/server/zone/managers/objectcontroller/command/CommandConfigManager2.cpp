@@ -426,6 +426,7 @@
 #include "server/zone/objects/creature/commands/StrongPoisonCommand.h"
 #include "server/zone/objects/creature/commands/StrongDiseaseCommand.h"
 #include "server/zone/objects/creature/commands/GuildFetch.h"
+#include "server/zone/objects/creature/commands/CallForPickupCommand.h"
 
 using namespace server::zone::managers::objectcontroller::command;
 
@@ -831,4 +832,5 @@ void CommandConfigManager::registerCommands2() {
 	commandFactory.registerCommand<MedicalForageCommand>(String("medicalForage").toLowerCase());
 	commandFactory.registerCommand<MeditateCommand>(String("meditate").toLowerCase());
 	commandFactory.registerCommand<GuildFetchCommand>(String("guildfetch").toLowerCase());
+	commandFactory.registerCommand<CallForPickupCommand>(String("callforpickup").toLowerCase());
 }
