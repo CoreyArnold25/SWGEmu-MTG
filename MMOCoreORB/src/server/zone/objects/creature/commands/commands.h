@@ -838,5 +838,6 @@
 #include "InspacerrCommand.h"
 #include "RequestSpaceTrainerCommand.h"
 #include "GuildFetch.h"
+#include "CallForPickupCommand.h"
 #endif /* COMMANDSNEW_H_ */
 

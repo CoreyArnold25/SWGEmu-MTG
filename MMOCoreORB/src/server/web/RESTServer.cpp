@@ -135,7 +135,11 @@ void RESTServer::registerEndpoints() {
 }
 
 void RESTServer::routeRequest(http_request& request) {
+	utility::string_t& ip = request.remote_address();
+
 	const auto& uri = request.relative_uri();
+
+	info() << "User IP: " << ip;
 
 	String endpointKey = request.method() + ":" + uri.path();
 

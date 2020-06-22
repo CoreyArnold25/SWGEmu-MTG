@@ -455,6 +455,7 @@ void BountyMissionObjectiveImplementation::addObserverToCreature(unsigned int ob
 }
 
 bool BountyMissionObjectiveImplementation::addPlayerTargetObservers() {
+	
 	Locker locker(&syncMutex);
 
 	ManagedReference<MissionObject* > mission = this->mission.get();

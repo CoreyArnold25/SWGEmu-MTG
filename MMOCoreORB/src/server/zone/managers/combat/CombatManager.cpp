@@ -253,6 +253,7 @@ int CombatManager::doCombatAction(CreatureObject* attacker, WeaponObject* weapon
 			if (ghost != nullptr) {
 				Locker olocker(attackingCreature, attacker);
 				ghost->updateLastPvpCombatActionTimestamp(shouldGcwTef, shouldBhTef);
+				
 			}
 		}
 	}

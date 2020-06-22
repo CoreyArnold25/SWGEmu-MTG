@@ -75,8 +75,10 @@ int AuctionsMapImplementation::addVendorItem(CreatureObject* player, const Strin
 		ycoord = vendor->getPositionY();
 	}
 
+	String itemType = GetObjectTypeName(item->getItemType());
+
 	StringBuffer bazaar_statement;
-	bazaar_statement << "INSERT INTO bazaar_market (objectId, ownerid, ownername, amount, objectName, sold, deleted, onbazaar, planet, xcoordinate, ycoordinate)";
+	bazaar_statement << "INSERT INTO bazaar_market (objectId, ownerid, ownername, amount, objectName, sold, deleted, onbazaar, planet, xcoordinate, ycoordinate, objecttype)";
 	bazaar_statement << " SELECT * FROM (SELECT " << item->getObjectID();
 	bazaar_statement << " as objectId, " << item->getOwnerID() << " as ownerid, '" << item->getOwnerName();
 	bazaar_statement << "' as ownername, " << item->getPrice() << " as amount, '" << item->getItemName();
@@ -87,13 +89,12 @@ int AuctionsMapImplementation::addVendorItem(CreatureObject* player, const Strin
 		else
 			bazaar_statement << "NULL as xcoordinate, ";
 		if(ycoord != 0)
-			bazaar_statement << ycoord << " as ycoordinate ";
+			bazaar_statement << ycoord << " as ycoordinate, ";
 		else
-			bazaar_statement << "NULL as ycoordinate ";
-		bazaar_statement << ") as tmp";
+			bazaar_statement << "NULL as ycoordinate, ";
+	bazaar_statement << "'" << itemType << "' as objecttype ";
+	bazaar_statement << ") as tmp";
 	bazaar_statement << " WHERE NOT EXISTS (SELECT objectId FROM bazaar_market WHERE objectId = " << item->getObjectID() << " AND deleted = 0 and sold = 0) LIMIT 1; ";
-
-	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
 
 	return ItemSoldMessage::SUCCESS;
 }
@@ -128,8 +129,10 @@ int AuctionsMapImplementation::addBazaarItem(CreatureObject* player, const Strin
 		ycoord = vendor->getPositionY();
 	}
 
+	String itemType = GetObjectTypeName(item->getItemType());
+
 	StringBuffer bazaar_statement;
-	bazaar_statement << "INSERT INTO bazaar_market (objectId, ownerid, ownername, amount, objectName, sold, deleted, onbazaar, planet, xcoordinate, ycoordinate)";
+	bazaar_statement << "INSERT INTO bazaar_market (objectId, ownerid, ownername, amount, objectName, sold, deleted, onbazaar, planet, xcoordinate, ycoordinate, objecttype)";
 	bazaar_statement << " SELECT * FROM (SELECT " << item->getObjectID();
 	bazaar_statement << " as objectId, " << item->getOwnerID() << " as ownerid, '" << item->getOwnerName();
 	bazaar_statement << "' as ownername, " << item->getPrice() << " as amount, '" << item->getItemName();
@@ -140,10 +143,11 @@ int AuctionsMapImplementation::addBazaarItem(CreatureObject* player, const Strin
 		else
 			bazaar_statement << "NULL as xcoordinate, ";
 		if(ycoord != 0)
-			bazaar_statement << ycoord << " as ycoordinate ";
+			bazaar_statement << ycoord << " as ycoordinate, ";
 		else
-			bazaar_statement << "NULL as ycoordinate ";
-		bazaar_statement << ") as tmp";
+			bazaar_statement << "NULL as ycoordinate, ";
+	bazaar_statement << "'" << itemType << "' as objecttype ";
+	bazaar_statement << ") as tmp";
 	bazaar_statement << " WHERE NOT EXISTS (SELECT objectId FROM bazaar_market WHERE objectId = " << item->getObjectID() << " AND deleted = 0 and sold = 0) LIMIT 1; ";
 
 	ServerDatabase::instance()->executeQuery(bazaar_statement.toString());
@@ -403,3 +407,494 @@ void AuctionsMapImplementation::removeFromCommodityLimit(AuctionItem* item) {
 		commoditiesLimit.drop(item->getOwnerID());
 }
 
+
+String AuctionsMapImplementation::GetObjectTypeName(int itemTypeId){
+	String objectTypeName = "";
+	switch(itemTypeId){
+		case SceneObjectType::WEAPON:
+			objectTypeName = "WEAPON";
+			break;
+		case SceneObjectType::MELEEWEAPON:
+			objectTypeName = "MELEEWEAPON";
+			break;
+		case SceneObjectType::PISTOL:
+			objectTypeName = "PISTOL";
+			break;
+		case SceneObjectType::RANGEDWEAPON:
+			objectTypeName = "RANGEDWEAPON";
+			break;
+		case SceneObjectType::ONEHANDMELEEWEAPON:
+			objectTypeName = "ONEHANDMELEEWEAPON";
+			break;
+		case SceneObjectType::SPECIALHEAVYWEAPON:
+			objectTypeName = "SPECIALHEAVYWEAPON";
+			break;
+		case SceneObjectType::HEAVYWEAPON:
+			objectTypeName = "HEAVYWEAPON";
+			break;
+		case SceneObjectType::RIFLE:
+			objectTypeName = "RIFLE";
+			break;
+		case SceneObjectType::CARBINE:
+			objectTypeName = "CARBINE";
+			break;
+		case SceneObjectType::POLEARM:
+			objectTypeName = "POLEARM";
+			break;
+		case SceneObjectType::TWOHANDMELEEWEAPON:
+			objectTypeName = "TWOHANDMELEEWEAPON";
+			break;
+		case SceneObjectType::MINE:
+			objectTypeName = "MINE";
+			break;
+		case SceneObjectType::THROWNWEAPON:
+			objectTypeName = "THROWNWEAPON";
+			break;
+		case SceneObjectType::ARMOR:
+			objectTypeName = "ARMOR";
+			break;
+		case SceneObjectType::BODYARMOR:
+			objectTypeName = "BODYARMOR";
+			break;
+		case SceneObjectType::HEADARMOR:
+			objectTypeName = "HEADARMOR";
+			break;
+		case SceneObjectType::MISCARMOR:
+			objectTypeName = "MISCARMOR";
+			break;
+		case SceneObjectType::LEGARMOR:
+			objectTypeName = "LEGARMOR";
+			break;
+		case SceneObjectType::ARMARMOR:
+			objectTypeName = "ARMARMOR";
+			break;
+		case SceneObjectType::FOOTARMOR:
+			objectTypeName = "FOOTARMOR";
+			break;
+		case SceneObjectType::SHIELDGENERATOR:
+			objectTypeName = "SHIELDGENERATOR";
+			break;
+		case SceneObjectType::TOOL:
+			objectTypeName = "TOOL";
+			break;
+		case SceneObjectType::CRAFTINGTOOL:
+			objectTypeName = "CRAFTINGTOOL";
+			break;
+		case SceneObjectType::SURVEYTOOL:
+			objectTypeName = "SURVEYTOOL";
+			break;
+		case SceneObjectType::RECYCLETOOL:
+			objectTypeName = "RECYCLETOOL";
+			break;
+		case SceneObjectType::CRAFTINGSTATION:
+			objectTypeName = "CRAFTINGSTATION";
+			break;
+		case SceneObjectType::FURNITURE:
+			objectTypeName = "FURNITURE";
+			break;
+		case SceneObjectType::FOOD:
+			objectTypeName = "FOOD";
+			break;
+		case SceneObjectType::DRINK:
+			objectTypeName = "DRINK";
+			break;
+		case SceneObjectType::CONTAINER:
+			objectTypeName = "CONTAINER";
+			break;
+		case SceneObjectType::INSTALLATION:
+			objectTypeName = "INSTALLATION";
+			break;
+		case SceneObjectType::FACTORY:
+			objectTypeName = "FACTORY";
+			break;
+		case SceneObjectType::GENERATOR:
+			objectTypeName = "GENERATOR";
+			break;
+		case SceneObjectType::HARVESTER:
+			objectTypeName = "HARVESTER";
+			break;
+		case SceneObjectType::DESTRUCTIBLE:
+			objectTypeName = "DESTRUCTIBLE";
+			break;
+		case SceneObjectType::MINEFIELD:
+			objectTypeName = "MINEFIELD";
+			break;
+		case SceneObjectType::GARAGEINSTALLATION:
+			objectTypeName = "GARAGEINSTALLATION";
+			break;
+		case SceneObjectType::SHUTTLEINSTALLATION:
+			objectTypeName = "SHUTTLEINSTALLATION";
+			break;
+		case SceneObjectType::AMMUNITION:
+			objectTypeName = "AMMUNITION";
+			break; 
+		case SceneObjectType::CHEMICAL:
+			objectTypeName = "CHEMICAL";
+			break; 
+		case SceneObjectType::WEARABLECONTAINER:
+			objectTypeName = "WEARABLECONTAINER";
+			break; 
+		case SceneObjectType::ELECTRONICS:
+			objectTypeName = "ELECTRONICS";
+			break; 
+		case SceneObjectType::FLORA:
+			objectTypeName = "FLORA";
+			break; 
+		case SceneObjectType::INSTRUMENT:
+			objectTypeName = "INSTRUMENT";
+			break; 
+		case SceneObjectType::PHARMACEUTICAL:
+			objectTypeName = "PHARMACEUTICAL";
+			break; 
+		case SceneObjectType::SIGN:
+			objectTypeName = "SIGN";
+			break; 
+		case SceneObjectType::FACTORYCRATE:
+			objectTypeName = "FACTORYCRATE";
+			break;
+		case SceneObjectType::TRAVELTICKET:
+			objectTypeName = "TRAVELTICKET";
+			break; 
+		case SceneObjectType::GENERICITEM:
+			objectTypeName = "GENERICITEM";
+			break; 
+		case SceneObjectType::TRAP:
+			objectTypeName = "TRAP";
+			break; 
+		case SceneObjectType::FISHINGPOLE:
+			objectTypeName = "FISHINGPOLE";
+			break; 
+		case SceneObjectType::FISHINGBAIT:
+			objectTypeName = "FISHINGBAIT";
+			break; 
+		case SceneObjectType::FIREWORK:
+			objectTypeName = "FIREWORK";
+			break;
+		case SceneObjectType::ITEM:
+			objectTypeName = "ITEM";
+			break; 
+		case SceneObjectType::PETMEDECINE:
+			objectTypeName = "PETMEDECINE";
+			break; 
+		case SceneObjectType::FIREWORKSHOW:
+			objectTypeName = "FIREWORKSHOW";
+			break; 
+		case SceneObjectType::CLOTHINGATTACHMENT:
+			objectTypeName = "CLOTHINGATTACHMENT";
+			break; 
+		case SceneObjectType::LIVESAMPLE:
+			objectTypeName = "LIVESAMPLE";
+			break; 
+		case SceneObjectType::ARMORATTACHMENT:
+			objectTypeName = "ARMORATTACHMENT";
+			break; 
+		case SceneObjectType::COMMUNITYCRAFTINGPROJECT:
+			objectTypeName = "COMMUNITYCRAFTINGPROJECT";
+			break; 
+		case SceneObjectType::CRYSTAL:
+			objectTypeName = "CRYSTAL";
+			break;
+		case SceneObjectType::DROIDPROGRAMMINGCHIP:
+			objectTypeName = "DROIDPROGRAMMINGCHIP";
+			break; 
+		case SceneObjectType::ASTEROID:
+			objectTypeName = "ASTEROID";
+			break; 
+		case SceneObjectType::PILOTCHAIR:
+			objectTypeName = "PILOTCHAIR";
+			break; 
+		case SceneObjectType::OPERATIONSCHAIR:
+			objectTypeName = "OPERATIONSCHAIR";
+			break; 
+		case SceneObjectType::TURRETACCESSLADDER:
+			objectTypeName = "TURRETACCESSLADDER";
+			break; 
+		case SceneObjectType::CONTAINER2:
+			objectTypeName = "CONTAINER2";
+			break; 
+		case SceneObjectType::CAMOKIT:
+			objectTypeName = "CAMOKIT";
+			break; 
+		case SceneObjectType::FISH:
+			objectTypeName = "FISH";
+			break;
+		case SceneObjectType::STIMPACK:
+			objectTypeName = "STIMPACK";
+			break; 
+		case SceneObjectType::RANGEDSTIMPACK:
+			objectTypeName = "RANGEDSTIMPACK";
+			break; 
+		case SceneObjectType::ENHANCEPACK:
+			objectTypeName = "ENHANCEPACK";
+			break; 
+		case SceneObjectType::CUREPACK:
+			objectTypeName = "CUREPACK";
+			break; 
+		case SceneObjectType::DOTPACK:
+			objectTypeName = "DOTPACK";
+			break; 
+		case SceneObjectType::WOUNDPACK:
+			objectTypeName = "WOUNDPACK";
+			break; 
+		case SceneObjectType::STATEPACK:
+			objectTypeName = "STATEPACK";
+			break; 
+		case SceneObjectType::REVIVEPACK:
+			objectTypeName = "REVIVEPACK";
+			break; 
+		case SceneObjectType::SLICINGTOOL:
+			objectTypeName = "SLICINGTOOL";
+			break; 
+		case SceneObjectType::MOLECULARCLAMP:
+			objectTypeName = "MOLECULARCLAMP";
+			break; 
+		case SceneObjectType::FLOWANALYZER:
+			objectTypeName = "FLOWANALYZER";
+			break; 
+		case SceneObjectType::LASERKNIFE:
+			objectTypeName = "LASERKNIFE";
+			break; 
+		case SceneObjectType::WEAPONUPGRADEKIT:
+			objectTypeName = "WEAPONUPGRADEKIT";
+			break; 
+		case SceneObjectType::ARMORUPGRADEKIT:
+			objectTypeName = "ARMORUPGRADEKIT";
+			break; 
+		case SceneObjectType::ANTIDECAYKIT:
+			objectTypeName = "ANTIDECAYKIT";
+			break; 
+		case SceneObjectType::VEHICLE:
+			objectTypeName = "VEHICLE";
+			break; 
+		case SceneObjectType::HOVERVEHICLE:
+			objectTypeName = "HOVERVEHICLE";
+			break; 
+		case SceneObjectType::COMPONENT:
+			objectTypeName = "COMPONENT";
+			break;
+		case SceneObjectType::ARMORCOMPONENT:
+			objectTypeName = "ARMORCOMPONENT";
+			break;
+		case SceneObjectType::CHEMISTRYCOMPONENT:
+			objectTypeName = "CHEMISTRYCOMPONENT";
+			break;
+		case SceneObjectType::CLOTHINGCOMPONENT:
+			objectTypeName = "CLOTHINGCOMPONENT";
+			break;
+		case SceneObjectType::DROIDCOMPONENT :
+			objectTypeName = "DROIDCOMPONENT";
+			break;
+		case SceneObjectType::ELECTRONICSCOMPONENT:
+			objectTypeName = "ELECTRONICSCOMPONENT";
+			break;
+		case SceneObjectType::MUNITIONCOMPONENT:
+			objectTypeName = "MUNITIONCOMPONENT";
+			break;
+		case SceneObjectType::STRUCTURECOMPONENT:
+			objectTypeName = "STRUCTURECOMPONENT";
+			break;
+		case SceneObjectType::MELEEWEAPONCOMPONENT:
+			objectTypeName = "MELEEWEAPONCOMPONENT";
+			break;
+		case SceneObjectType::RANGEDWEAPONCOMPONENT:
+			objectTypeName = "RANGEDWEAPONCOMPONENT";
+			break;
+		case SceneObjectType::TISSUECOMPONENT:
+			objectTypeName = "TISSUECOMPONENT";
+			break;
+		case SceneObjectType::GENETICCOMPONENT:
+			objectTypeName = "GENETICCOMPONENT";
+			break;
+		case SceneObjectType::LIGHTSABERCRYSTAL:
+			objectTypeName = "LIGHTSABERCRYSTAL";
+			break;
+		case SceneObjectType::COMMUNITYCRAFTINGCOMPONENT:
+			objectTypeName = "COMMUNITYCRAFTINGCOMPONENT";
+			break;
+		case SceneObjectType::DNACOMPONENT:
+			objectTypeName = "DNACOMPONENT";
+			break;
+		case SceneObjectType::WEAPONPOWERUP:
+			objectTypeName = "WEAPONPOWERUP";
+			break;
+		case SceneObjectType::MELEEWEAPONPOWERUP:
+			objectTypeName = "MELEEWEAPONPOWERUP";
+			break;
+		case SceneObjectType::RANGEDWEAPONPOWERUP:
+			objectTypeName = "RANGEDWEAPONPOWERUP";
+			break;
+		case SceneObjectType::THROWNWEAPONPOWERUP:
+			objectTypeName = "THROWNWEAPONPOWERUP";
+			break;
+		case SceneObjectType::HEAVYWEAPONPOWERUP:
+			objectTypeName = "HEAVYWEAPONPOWERUP";
+			break;
+		case SceneObjectType::MINEPOWERUP:
+			objectTypeName = "MINEPOWERUP";
+			break;
+		case SceneObjectType::SPECIALHEAVYWEAPONPOWERUP:
+			objectTypeName = "SPECIALHEAVYWEAPONPOWERUP";
+			break;
+		case SceneObjectType::ARMORPOWERUP:
+			objectTypeName = "ARMORPOWERUP";
+			break;
+		case SceneObjectType::BODYARMORPOWERUP:
+			objectTypeName = "BODYARMORPOWERUP";
+			break;
+		case SceneObjectType::HEADARMORPOWERUP:
+			objectTypeName = "HEADARMORPOWERUP";
+			break;
+		case SceneObjectType::MISCARMORPOWERUP:
+			objectTypeName = "MISCARMORPOWERUP";
+			break;
+		case SceneObjectType::LEGARMORPOWERUP:
+			objectTypeName = "LEGARMORPOWERUP";
+			break;
+		case SceneObjectType::ARMARMORPOWERUP:
+			objectTypeName = "ARMARMORPOWERUP";
+			break;
+		case SceneObjectType::HANDARMORPOWERUP:
+			objectTypeName = "HANDARMORPOWERUP";
+			break;
+		case SceneObjectType::FOOTARMORPOWERUP:
+			objectTypeName = "FOOTARMORPOWERUP";
+			break;
+		case SceneObjectType::JEWELRY:
+			objectTypeName = "JEWELRY";
+			break;
+		case SceneObjectType::RING:
+			objectTypeName = "RING";
+			break;
+		case SceneObjectType::BRACELET:
+			objectTypeName = "BRACELET";
+			break;
+		case SceneObjectType::NECKLACE:
+			objectTypeName = "NECKLACE";
+			break;
+		case SceneObjectType::EARRING:
+			objectTypeName = "EARRING";
+			break;
+		case SceneObjectType::RESOURCECONTAINER:
+			objectTypeName = "RESOURCECONTAINER";
+			break;
+		case SceneObjectType::ENERGYGAS:
+			objectTypeName = "ENERGYGAS";
+			break;
+		case SceneObjectType::ENERGYLIQUID:
+			objectTypeName = "ENERGYLIQUID";
+			break;
+		case SceneObjectType::ENERGYRADIOACTIVE:
+			objectTypeName = "ENERGYRADIOACTIVE";
+			break;
+		case SceneObjectType::ENERGYSOLID:
+			objectTypeName = "ENERGYSOLID";
+			break; 
+		case SceneObjectType::INORGANICCHEMICAL:
+			objectTypeName = "INORGANICCHEMICAL";
+			break;
+		case SceneObjectType::INORGANICGAS:
+			objectTypeName = "INORGANICGAS";
+			break;
+		case SceneObjectType::INORGANICMINERAL:
+			objectTypeName = "INORGANICMINERAL";
+			break;
+		case SceneObjectType::WATER:
+			objectTypeName = "WATER";
+			break;
+		case SceneObjectType::ORGANICFOOD:
+			objectTypeName = "ORGANICFOOD";
+			break;
+		case SceneObjectType::ORGANICHIDE:
+			objectTypeName = "ORGANICHIDE";
+			break;
+		case SceneObjectType::ORGANICSTRUCTURAL:
+			objectTypeName = "ORGANICSTRUCTURAL";
+			break;
+		case SceneObjectType::QUESTRESOURCE:
+			objectTypeName = "QUESTRESOURCE";
+			break;
+		case SceneObjectType::DEED:
+			objectTypeName = "DEED";
+			break;
+		case SceneObjectType::BUILDINGDEED:
+			objectTypeName = "BUILDINGDEED";
+			break;
+		case SceneObjectType::INSTALLATIONDEED:
+			objectTypeName = "INSTALLATIONDEED";
+			break;
+		case SceneObjectType::PETDEED:
+			objectTypeName = "PETDEED";
+			break;
+		case SceneObjectType::DROIDDEED:
+			objectTypeName = "DROIDDEED";
+			break;
+		case SceneObjectType::VEHICLEDEED:
+			objectTypeName = "VEHICLEDEED";
+			break;
+		case SceneObjectType::RESOURCEDEED:
+			objectTypeName = "RESOURCEDEED";
+			break;
+		case SceneObjectType::CLOTHING:
+			objectTypeName = "CLOTHING";
+			break; 
+		case SceneObjectType::BANDOLIER:
+			objectTypeName = "BANDOLIER";
+			break;
+		case SceneObjectType::BELT:
+			objectTypeName = "BELT";
+			break;
+		case SceneObjectType::BODYSUIT:
+			objectTypeName = "BODYSUIT";
+			break;
+		case SceneObjectType::CAPE:
+			objectTypeName = "CAPE";
+			break;
+		case SceneObjectType::CLOAK:
+			objectTypeName = "CLOAK";
+			break;
+		case SceneObjectType::FOOTWEAR:
+			objectTypeName = "FOOTWEAR";
+			break;
+		case SceneObjectType::DRESS:
+			objectTypeName = "DRESS";
+			break;
+		case SceneObjectType::HANDWEAR:
+			objectTypeName = "HANDWEAR";
+			break;
+		case SceneObjectType::EYEWEAR:
+			objectTypeName = "EYEWEAR";
+			break;
+		case SceneObjectType::HEADWEAR:
+			objectTypeName = "HEADWEAR";
+			break;
+		case SceneObjectType::JACKET:
+			objectTypeName = "JACKET";
+			break;
+		case SceneObjectType::PANTS:
+			objectTypeName = "PANTS";
+			break;
+		case SceneObjectType::ROBE:
+			objectTypeName = "ROBE";
+			break;
+		case SceneObjectType::SHIRT:
+			objectTypeName = "SHIRT";
+			break;
+		case SceneObjectType::VEST:
+			objectTypeName = "VEST";
+			break; 
+		case SceneObjectType::WOOKIEGARB:
+			objectTypeName = "WOOKIEGARB";
+			break; 
+		case SceneObjectType::MISCCLOTHING:
+			objectTypeName = "MISCCLOTHING";
+			break;
+		case SceneObjectType::SKIRT:
+			objectTypeName = "SKIRT";
+			break;
+		default:
+			objectTypeName = "MISC";
+			break;
+	}
+
+	return objectTypeName;
+}
